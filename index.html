@@ -767,7 +767,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
             <h3 class="text-lg font-bold text-gray-900"><i class="fa-solid fa-clipboard-list text-blue-500 mr-2"></i>Daftar Pesanan Masuk</h3>
-            <button onclick="app.fetchAdminOrders()" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100"><i class="fa-solid fa-sync-alt mr-1"></i> Refresh</button>
+            <button id="btn-refresh-orders" onclick="app.fetchAdminOrders()" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"><i class="fa-solid fa-sync-alt mr-1"></i> Refresh</button>
           </div>
           <div class="px-6 py-4 border-b border-gray-100 bg-gray-50 flex flex-col md:flex-row gap-3">
               <div class="flex-1 relative">
@@ -859,6 +859,7 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
             <h3 class="text-lg font-bold text-gray-900"><i class="fa-solid fa-database text-emerald-500 mr-2"></i>Database Produk</h3>
+            <button id="btn-refresh-products" onclick="app.refreshAdminProducts()" class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-lg hover:bg-emerald-100 transition-colors"><i class="fa-solid fa-sync-alt mr-1"></i> Refresh</button>
           </div>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
@@ -1017,7 +1018,6 @@
   appId: "1:648729731728:web:3026c6e6aad8edab2cee15",
   measurementId: "G-67NMCSD868"
 };
-
     const firebaseConfig = IS_PREVIEW ? JSON.parse(__firebase_config) : USER_FIREBASE_CONFIG;
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'toko-online-v10';
 
@@ -2148,6 +2148,7 @@
       switchAdminTab(t) { ['orders','products','settings'].forEach(x => document.getElementById(`admin-tab-${x}`).classList.add('hidden')); document.getElementById(`admin-tab-${t}`).classList.remove('hidden'); ['orders','products','settings'].forEach(x => document.getElementById(`tab-${x}`).className = t===x?"px-3 py-2 text-white bg-gray-800 rounded-lg":"px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"); },
       
       async fetchAdminOrders() {
+          ui.setBtnLoading('btn-refresh-orders', true);
           try {
               const qSnap = await getDocs(getCol('orders')); let allOrders = [];
               const now = Date.now();
@@ -2175,7 +2176,13 @@
               state.orders = allOrders; 
               this.filterAdminOrders();
               this.calculateWeeklyProfit(allOrders); 
-          } catch(e) {}
+              ui.showToast("Data pesanan berhasil diperbarui!");
+          } catch(e) {
+              console.error(e);
+              ui.showToast("Gagal memuat pesanan", "error");
+          } finally {
+              ui.setBtnLoading('btn-refresh-orders', false, '<i class="fa-solid fa-sync-alt mr-1"></i> Refresh');
+          }
       },
 
       calculateWeeklyProfit(orders) {
@@ -2372,6 +2379,28 @@
                   </div>
                   <div class="mt-8 pt-6 border-t text-center text-xs text-gray-400"><p>Terima kasih telah berbelanja di Toko Piyungan.</p><p>Invoice ini sah dan digenerate otomatis oleh sistem.</p></div>
               </div><script>window.onload=function(){window.print();}<\/script></body></html>`); printWindow.document.close();
+      },
+
+      async refreshAdminProducts() {
+          ui.setBtnLoading('btn-refresh-products', true);
+          try {
+              const prodColRef = getCol('products');
+              const prodSnap = await getDocs(prodColRef);
+              let pData = [];
+              prodSnap.forEach(doc => pData.push({ id: doc.id, ...doc.data() }));
+              pData.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+              
+              state.products = pData;
+              this.renderAdminProducts();
+              this.filterCategory(state.selectedCategory); // Update katalog publik juga
+              
+              ui.showToast("Data produk berhasil diperbarui!");
+          } catch(e) {
+              console.error(e);
+              ui.showToast("Gagal memuat produk", "error");
+          } finally {
+              ui.setBtnLoading('btn-refresh-products', false, '<i class="fa-solid fa-sync-alt mr-1"></i> Refresh');
+          }
       },
 
       renderAdminProducts() { 
