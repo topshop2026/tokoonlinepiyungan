@@ -155,7 +155,7 @@
 
     <!-- Product Grid -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="flex justify-between items-center mb-6">
+      <div id="katalog-title-container" class="flex justify-between items-center mb-6 hidden">
         <h2 id="katalog-title" class="text-xl md:text-2xl font-black text-gray-800 tracking-tight">Semua Produk</h2>
       </div>
       <div id="public-loading" class="text-center py-16">
@@ -167,7 +167,7 @@
         <h3 class="text-lg font-bold text-gray-900 mb-1">Kosong</h3>
         <p class="text-gray-500 text-sm">Belum ada produk untuk kategori ini.</p>
       </div>
-      <div id="product-grid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6"></div>
+      <div id="catalog-container" class="w-full"></div>
     </div>
 
     <!-- Review Section -->
@@ -1018,6 +1018,7 @@
   appId: "1:648729731728:web:3026c6e6aad8edab2cee15",
   measurementId: "G-67NMCSD868"
 };
+
     const firebaseConfig = IS_PREVIEW ? JSON.parse(__firebase_config) : USER_FIREBASE_CONFIG;
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'toko-online-v10';
 
@@ -1028,8 +1029,7 @@
     const getCol = (name) => IS_PREVIEW ? collection(db, 'artifacts', appId, 'public', 'data', name) : collection(db, name);
     const getDocRef = (colName, docId) => doc(getCol(colName), docId);
     
-    // PERBAIKAN: Memastikan semua akun disimpan di 1 folder publik 'profiles' agar bisa dicari saat cek Referral
-    const getProfileRef = (uid) => doc(getCol('profiles'), uid);
+    const getProfileRef = (uid) => IS_PREVIEW ? doc(collection(db, 'artifacts', appId, 'users', uid, 'profile'), 'data') : doc(collection(db, 'users'), uid);
 
     // Global State
     const state = {
@@ -1038,7 +1038,8 @@
       editingProductId: null, dummyInjected: false, customerData: null, qrisString: '', orders: [],
       buyerLat: null, buyerLng: null, completedOrdersCount: 0,
       customVoucherCode: '', customVoucherAmount: 0, appliedManualVoucherCode: '', appliedManualVoucherAmount: 0, customVoucherUsedBy: [],
-      activePointsAnim: null, appliedPointsDiscount: 0, pointsToDeduct: 0, adminAvatar: '', currentView: 'home'
+      activePointsAnim: null, appliedPointsDiscount: 0, pointsToDeduct: 0, adminAvatar: '', currentView: 'home',
+      expandedSections: { semua: false, promo: false, diskon: false, hemat: false }
     };
     window.state = state;
 
@@ -1683,39 +1684,154 @@
           }).join(''); 
       },
       
-      filterCategory(cat) { state.selectedCategory = cat; this.renderCategoryPills(); document.getElementById('katalog-title').innerHTML = cat==='Semua'?'Semua Produk':`<span class="text-emerald-600">${cat}</span>`; this.renderProducts(state.products.filter(p => p.status==='Aktif' && (cat==='Semua' || p.category===cat))); },
-      searchProducts(id) { const q = document.getElementById(id).value.toLowerCase(); this.renderProducts(state.products.filter(p => p.status==='Aktif' && (state.selectedCategory==='Semua' || p.category===state.selectedCategory) && (p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)))); },
+      filterCategory(cat) { 
+          state.selectedCategory = cat; 
+          this.renderCategoryPills(); 
+          
+          const q = document.getElementById('searchInput').value.toLowerCase();
+          const isDefaultView = cat === 'Semua' && !q;
+
+          document.getElementById('katalog-title').innerHTML = isDefaultView ? '' : (cat === 'Semua' ? (q ? 'Hasil Pencarian' : 'Semua Produk') : `<span class="text-emerald-600">${cat}</span>`);
+          document.getElementById('katalog-title-container').classList[isDefaultView ? 'add' : 'remove']('hidden');
+
+          if (isDefaultView) {
+              this.renderHomeSections();
+          } else {
+              let filtered = state.products.filter(p => p.status === 'Aktif');
+              if (cat !== 'Semua') filtered = filtered.filter(p => p.category === cat);
+              if (q) filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || (p.desc||'').toLowerCase().includes(q));
+              this.renderSimpleGrid(filtered);
+          }
+      },
+
+      searchProducts(id) { 
+          const q = document.getElementById(id).value.toLowerCase(); 
+          const isDefaultView = state.selectedCategory === 'Semua' && !q;
+
+          document.getElementById('katalog-title').innerHTML = isDefaultView ? '' : (state.selectedCategory === 'Semua' ? (q ? 'Hasil Pencarian' : 'Semua Produk') : `<span class="text-emerald-600">${state.selectedCategory}</span>`);
+          document.getElementById('katalog-title-container').classList[isDefaultView ? 'add' : 'remove']('hidden');
+
+          if (isDefaultView) {
+              this.renderHomeSections();
+          } else {
+              let filtered = state.products.filter(p => p.status === 'Aktif');
+              if (state.selectedCategory !== 'Semua') filtered = filtered.filter(p => p.category === state.selectedCategory);
+              if (q) filtered = filtered.filter(p => p.name.toLowerCase().includes(q) || (p.desc||'').toLowerCase().includes(q));
+              this.renderSimpleGrid(filtered);
+          }
+      },
 
       changeVariantPrice(id) {
         const sel = document.getElementById(`var-${id}`); const opt = sel.options[sel.selectedIndex];
         if(opt && opt.value !== "") document.getElementById(`price-${id}`).innerText = ui.formatRupiah(Number(opt.getAttribute('data-price')));
       },
 
-      renderProducts(items) {
-        const grid = document.getElementById('product-grid'); grid.innerHTML = '';
-        if(!items.length) { document.getElementById('public-empty').classList.remove('hidden'); return; }
-        document.getElementById('public-empty').classList.add('hidden');
-        grid.innerHTML = items.map(p => {
-          let variantHTML = `<div class="h-[30px] mt-1 mb-2"></div>`;
-          let badgeHTML = '';
-          if (p.variants && p.variants.length > 0) {
-            badgeHTML = `<div class="absolute top-2 right-2 z-10"><span class="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">Varian Tersedia</span></div>`;
-            const optionsHTML = p.variants.map((v, i) => `<option value="${i}" data-price="${v.price}" data-original-price="${v.originalPrice !== undefined ? v.originalPrice : (p.originalPrice || 0)}">${v.name}</option>`).join('');
-            variantHTML = `<div class="mt-1 mb-2"><select id="var-${p.id}" onchange="app.changeVariantPrice('${p.id}')" class="variant-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"><option value="" disabled selected>Pilih Variasi</option>${optionsHTML}</select></div>`;
-          }
-          
-          let labelHTML = '';
-          if (p.label) {
-              labelHTML = `<div class="mb-1"><span class="inline-block border border-orange-500 text-red-600 font-black italic text-[9px] sm:text-[10px] px-1.5 py-0.5 uppercase tracking-tighter" style="text-shadow: 0.5px 0.5px 0px rgba(250,204,21,0.3);">${p.label}</span></div>`;
-          }
-          
-          let btnCart = `<button onclick="app.addToCart('${p.id}')" class="bg-gray-900 hover:bg-emerald-600 text-white w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-md transition-all flex items-center justify-center shrink-0 mb-0.5"><i class="fa-solid fa-plus"></i></button>`;
-          if (p.label === 'SOLD OUT') {
-              btnCart = `<button disabled class="bg-gray-300 text-gray-500 w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-none cursor-not-allowed flex items-center justify-center shrink-0 mb-0.5"><i class="fa-solid fa-times"></i></button>`;
-          }
+      generateProductCardHTML(p) {
+        let variantHTML = `<div class="h-[30px] mt-1 mb-2"></div>`;
+        let badgeHTML = '';
+        if (p.variants && p.variants.length > 0) {
+          badgeHTML = `<div class="absolute top-2 right-2 z-10"><span class="bg-blue-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm">Varian Tersedia</span></div>`;
+          const optionsHTML = p.variants.map((v, i) => `<option value="${i}" data-price="${v.price}" data-original-price="${v.originalPrice !== undefined ? v.originalPrice : (p.originalPrice || 0)}">${v.name}</option>`).join('');
+          variantHTML = `<div class="mt-1 mb-2"><select id="var-${p.id}" onchange="app.changeVariantPrice('${p.id}')" class="variant-select w-full bg-gray-50 border border-gray-200 text-gray-700 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-medium"><option value="" disabled selected>Pilih Variasi</option>${optionsHTML}</select></div>`;
+        }
+        
+        let labelHTML = '';
+        if (p.label) {
+            labelHTML = `<div class="mb-1"><span class="inline-block border border-orange-500 text-red-600 font-black italic text-[9px] sm:text-[10px] px-1.5 py-0.5 uppercase tracking-tighter" style="text-shadow: 0.5px 0.5px 0px rgba(250,204,21,0.3);">${p.label}</span></div>`;
+        }
+        
+        let btnCart = `<button onclick="app.addToCart('${p.id}')" class="bg-gray-900 hover:bg-emerald-600 text-white w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-md transition-all flex items-center justify-center shrink-0 mb-0.5"><i class="fa-solid fa-plus"></i></button>`;
+        if (p.label === 'SOLD OUT') {
+            btnCart = `<button disabled class="bg-gray-300 text-gray-500 w-8 h-8 sm:w-9 sm:h-9 rounded-xl shadow-none cursor-not-allowed flex items-center justify-center shrink-0 mb-0.5"><i class="fa-solid fa-times"></i></button>`;
+        }
 
-          return `<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all flex flex-col group relative"><div class="absolute top-2 left-2 z-10"><span class="bg-white/90 backdrop-blur-sm text-gray-800 text-[10px] font-black px-2 py-1 rounded shadow-sm">${p.category}</span></div>${badgeHTML}<img src="${p.img}" onclick="app.openProductDetail('${p.id}')" class="w-full h-48 object-cover bg-gray-100 group-hover:scale-105 transition-transform cursor-pointer" title="Klik untuk lihat detail"><div class="p-3 sm:p-4 flex flex-col flex-grow"><h3 class="text-sm font-bold text-gray-900 leading-tight line-clamp-2 cursor-pointer hover:text-emerald-600 mb-1" onclick="app.openProductDetail('${p.id}')">${p.name}</h3>${variantHTML}<div class="mt-auto pt-2 border-t border-gray-50 flex justify-between items-end"><div class="flex flex-col">${labelHTML}<span id="price-${p.id}" class="font-black text-emerald-600 text-sm sm:text-base">${ui.formatRupiah(p.price)}</span></div>${btnCart}</div></div></div>`;
-        }).join('');
+        return `<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-xl transition-all flex flex-col group relative"><div class="absolute top-2 left-2 z-10"><span class="bg-white/90 backdrop-blur-sm text-gray-800 text-[10px] font-black px-2 py-1 rounded shadow-sm">${p.category}</span></div>${badgeHTML}<img src="${p.img}" onclick="app.openProductDetail('${p.id}')" class="w-full h-48 object-cover bg-gray-100 group-hover:scale-105 transition-transform cursor-pointer" title="Klik untuk lihat detail"><div class="p-3 sm:p-4 flex flex-col flex-grow"><h3 class="text-sm font-bold text-gray-900 leading-tight line-clamp-2 cursor-pointer hover:text-emerald-600 mb-1" onclick="app.openProductDetail('${p.id}')">${p.name}</h3>${variantHTML}<div class="mt-auto pt-2 border-t border-gray-50 flex justify-between items-end"><div class="flex flex-col">${labelHTML}<span id="price-${p.id}" class="font-black text-emerald-600 text-sm sm:text-base">${ui.formatRupiah(p.price)}</span></div>${btnCart}</div></div></div>`;
+      },
+
+      renderSimpleGrid(items) {
+        const container = document.getElementById('catalog-container');
+        if(!items.length) { 
+            container.innerHTML = '';
+            document.getElementById('public-empty').classList.remove('hidden'); 
+            return; 
+        }
+        document.getElementById('public-empty').classList.add('hidden');
+        const gridHTML = items.map(p => this.generateProductCardHTML(p)).join('');
+        container.innerHTML = `<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">${gridHTML}</div>`;
+      },
+
+      buildSectionHTML(title, items, sectionId, defaultLimit) {
+        if (!items || items.length === 0) return '';
+        
+        if (state.expandedSections[sectionId] === undefined) state.expandedSections[sectionId] = false;
+        
+        const isExpanded = state.expandedSections[sectionId];
+        const limit = isExpanded ? items.length : defaultLimit;
+        const displayedItems = items.slice(0, limit);
+        
+        let showMoreBtn = '';
+        if (items.length > defaultLimit) {
+            if (!isExpanded) {
+                showMoreBtn = `<button onclick="app.expandSection('${sectionId}')" class="text-[11px] sm:text-sm font-black text-emerald-900 hover:text-emerald-600 transition-colors uppercase tracking-wide">Lihat Selengkapnya ></button>`;
+            } else {
+                showMoreBtn = `<button onclick="app.collapseSection('${sectionId}')" class="text-[11px] sm:text-sm font-black text-gray-500 hover:text-emerald-600 transition-colors uppercase tracking-wide">Sembunyikan <i class="fa-solid fa-chevron-up text-xs ml-1"></i></button>`;
+            }
+        }
+
+        const gridHTML = displayedItems.map(p => this.generateProductCardHTML(p)).join('');
+
+        return `
+        <div class="mb-10 fade-in">
+            <div class="flex justify-between items-end mb-4 border-b-2 border-emerald-800 pb-2">
+                <h2 class="text-xl md:text-3xl font-black text-emerald-900 uppercase tracking-tighter" style="font-family: 'Arial Black', Impact, sans-serif;">${title}</h2>
+                ${showMoreBtn}
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 md:gap-6">
+                ${gridHTML}
+            </div>
+        </div>
+        `;
+      },
+
+      renderHomeSections() {
+        const container = document.getElementById('catalog-container');
+        document.getElementById('public-empty').classList.add('hidden');
+        const activeProducts = state.products.filter(p => p.status === 'Aktif');
+        
+        if (activeProducts.length === 0) {
+            container.innerHTML = '';
+            document.getElementById('public-empty').classList.remove('hidden');
+            return;
+        }
+
+        let html = '';
+        
+        // 1. Semua Produk (1 row) -> Limit 5
+        html += this.buildSectionHTML('Semua Produk', activeProducts, 'semua', 5);
+        
+        // 2. Harga Promo
+        const promoProducts = activeProducts.filter(p => p.label === 'Harga Promo');
+        html += this.buildSectionHTML('HARGA PROMO', promoProducts, 'promo', 10);
+        
+        // 3. DISKON EXTRA
+        const diskonProducts = activeProducts.filter(p => p.label === 'DISKON EXTRA');
+        html += this.buildSectionHTML('DISKON EXTRA', diskonProducts, 'diskon', 10);
+        
+        // 4. PAKET HEMAT
+        const hematProducts = activeProducts.filter(p => p.label === 'PAKET HEMAT');
+        html += this.buildSectionHTML('PAKET HEMAT', hematProducts, 'hemat', 10);
+        
+        container.innerHTML = html;
+      },
+
+      expandSection(sectionId) {
+          state.expandedSections[sectionId] = true;
+          this.renderHomeSections();
+      },
+
+      collapseSection(sectionId) {
+          state.expandedSections[sectionId] = false;
+          this.renderHomeSections();
       },
 
       initScheduleDropdown() {
