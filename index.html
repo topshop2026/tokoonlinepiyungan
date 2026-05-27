@@ -106,6 +106,29 @@
     </div>
   </div>
 
+  <!-- PARTNER DETAIL MODAL -->
+  <div id="partner-detail-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[100000] hidden flex justify-center items-center backdrop-blur-sm p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden relative fade-in flex flex-col max-h-[90vh]">
+      <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center bg-white sticky top-0 z-10">
+        <h2 class="text-lg font-bold text-gray-900">Info Partner</h2>
+        <button onclick="app.closePartnerDetail()" class="w-8 h-8 rounded-full bg-gray-100 text-gray-500 hover:bg-red-100 hover:text-red-600 transition-colors"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <div class="overflow-y-auto flex-1 hide-scrollbar p-6 flex flex-col items-center text-center">
+        <div class="w-32 h-32 bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center mb-4 p-2">
+            <img id="partner-detail-img" src="" class="max-w-full max-h-full object-contain">
+        </div>
+        <h3 id="partner-detail-title" class="text-xl font-black text-gray-900 leading-tight mb-3">Nama Partner</h3>
+        <p id="partner-detail-desc" class="text-sm text-gray-600 leading-relaxed whitespace-pre-wrap w-full"></p>
+      </div>
+      <div class="p-5 border-t border-gray-100 bg-gray-50 flex flex-col gap-2.5">
+        <button id="partner-detail-btn" class="w-full bg-gradient-to-r from-orange-400 to-orange-600 hover:from-orange-500 hover:to-orange-700 text-white font-black py-3.5 px-4 rounded-xl shadow-md transition-all flex items-center justify-center text-sm uppercase tracking-wide">
+          <i class="fa-solid fa-ticket mr-2 text-lg"></i> Dapatkan Voucher Gratis
+        </button>
+        <button onclick="app.closePartnerDetail()" class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-xl transition-colors text-sm">Tutup</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOP NAVBAR CLEAN & MODERN -->
   <nav id="navbar-public" class="bg-white shadow-sm sticky top-0 z-40 transition-all duration-300 border-b border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -168,6 +191,16 @@
         <p class="text-gray-500 text-sm">Belum ada produk untuk kategori ini.</p>
       </div>
       <div id="catalog-container" class="w-full"></div>
+    </div>
+
+    <!-- Partner Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-gray-100 hidden" id="public-partner-section">
+      <div class="flex justify-between items-end mb-6 border-b-2 border-blue-800 pb-2">
+        <h2 class="text-xl md:text-2xl font-black text-blue-900 uppercase tracking-tighter" style="font-family: 'Arial Black', Impact, sans-serif;">Mitra & Partner Kami</h2>
+      </div>
+      <div id="partner-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
+        <!-- Disuntikkan lewat JS -->
+      </div>
     </div>
 
     <!-- Review Section -->
@@ -740,6 +773,7 @@
           <div class="flex items-center space-x-1 sm:space-x-4 text-sm font-medium overflow-x-auto hide-scrollbar">
             <button onclick="app.switchAdminTab('orders')" id="tab-orders" class="px-3 py-2 text-white bg-gray-800 rounded-lg"><i class="fa-solid fa-clipboard-list mr-1"></i><span class="hidden md:inline">Pesanan</span></button>
             <button onclick="app.switchAdminTab('products')" id="tab-products" class="px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"><i class="fa-solid fa-box mr-1"></i><span class="hidden md:inline">Produk</span></button>
+            <button onclick="app.switchAdminTab('partners')" id="tab-partners" class="px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"><i class="fa-solid fa-handshake mr-1"></i><span class="hidden md:inline">Partner</span></button>
             <button onclick="app.switchAdminTab('settings')" id="tab-settings" class="px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"><i class="fa-solid fa-cog mr-1"></i><span class="hidden md:inline">Pengaturan</span></button>
             <div class="h-6 w-px bg-gray-700 mx-2"></div>
             <button onclick="app.navigate('home')" class="text-emerald-400 hover:text-emerald-300 px-2 py-2" title="Ke Web"><i class="fa-solid fa-globe"></i></button>
@@ -874,6 +908,62 @@
                 </tr>
               </thead>
               <tbody id="admin-product-list" class="bg-white divide-y divide-gray-100"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Tab: Partners -->
+      <div id="admin-tab-partners" class="hidden fade-in">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+          <div class="flex items-center mb-5 pb-3 border-b border-gray-100 justify-between">
+            <div class="flex items-center">
+                <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mr-3"><i class="fa-solid fa-plus"></i></div>
+                <h3 id="form-partner-title" class="text-lg font-bold text-gray-900">Tambah Partner</h3>
+            </div>
+            <button id="btn-cancel-edit-partner" onclick="app.cancelEditPartner()" class="hidden text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg transition-colors"><i class="fa-solid fa-times mr-1"></i> Batal Edit</button>
+          </div>
+          
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Nama Usaha / Resto</label>
+              <input type="text" id="add-partner-name" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">URL Gambar / Logo</label>
+              <input type="text" id="add-partner-image" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Link URL (Opsional)</label>
+              <input type="text" id="add-partner-link" placeholder="https://..." class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Deskripsi Singkat</label>
+              <textarea id="add-partner-desc" rows="2" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500"></textarea>
+            </div>
+          </div>
+          <div class="mt-6 flex justify-end">
+            <button id="btn-add-partner" onclick="app.submitNewPartner()" class="bg-gray-900 hover:bg-black text-white font-bold py-2.5 px-8 rounded-xl shadow-md transition-colors">
+              <i class="fa-solid fa-save mr-2"></i> <span id="btn-add-partner-text">Simpan Partner</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-white">
+            <h3 class="text-lg font-bold text-gray-900"><i class="fa-solid fa-handshake text-blue-500 mr-2"></i>Database Partner</h3>
+            <button id="btn-refresh-partners" onclick="app.refreshAdminPartners()" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"><i class="fa-solid fa-sync-alt mr-1"></i> Refresh</button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Info Partner</th>
+                  <th class="px-6 py-4 text-left text-xs font-bold text-gray-500 uppercase">Link</th>
+                  <th class="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="admin-partner-list" class="bg-white divide-y divide-gray-100"></tbody>
             </table>
           </div>
         </div>
@@ -1039,7 +1129,8 @@
       buyerLat: null, buyerLng: null, completedOrdersCount: 0,
       customVoucherCode: '', customVoucherAmount: 0, appliedManualVoucherCode: '', appliedManualVoucherAmount: 0, customVoucherUsedBy: [],
       activePointsAnim: null, appliedPointsDiscount: 0, pointsToDeduct: 0, adminAvatar: '', currentView: 'home',
-      expandedSections: { semua: false, promo: false, diskon: false, hemat: false }
+      expandedSections: { semua: false, promo: false, diskon: false, hemat: false },
+      partners: [], editingPartnerId: null
     };
     window.state = state;
 
@@ -1267,9 +1358,10 @@
             const confRef = getDocRef('settings', 'app_config');
             const prodColRef = getCol('products');
 
-            const [confSnap, prodSnap] = await Promise.all([
+            const [confSnap, prodSnap, partSnap] = await Promise.all([
                 getDoc(confRef),
-                getDocs(prodColRef)
+                getDocs(prodColRef),
+                getDocs(getCol('partners')).catch(() => ({ forEach: () => {} })) // fallback jika koleksi belum ada
             ]);
 
             let d = {};
@@ -1300,7 +1392,11 @@
             
             pData.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)); state.products = pData;
 
+            let ptData = []; partSnap.forEach(doc => ptData.push({ id: doc.id, ...doc.data() }));
+            ptData.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)); state.partners = ptData;
+
             this.initPublicSlider(); this.renderCategoryPills(); this.filterCategory('Semua');
+            this.renderPartners();
             
             if(state.isAdmin) {
                 document.getElementById('setting-wa').value = state.waNumber; 
@@ -1315,7 +1411,7 @@
                 if (addCategoryEl) {
                     addCategoryEl.innerHTML = (cOpt.length?cOpt:["Umum"]).map(c=>`<option value="${c}">${c}</option>`).join('');
                 }
-                this.renderAdminProducts(); this.renderAdminSliders(); this.fetchAdminOrders();
+                this.renderAdminProducts(); this.renderAdminSliders(); this.renderAdminPartners(); this.fetchAdminOrders();
             }
         } catch(e) { 
             console.error("DB Error:", e); 
@@ -1413,6 +1509,23 @@
       },
       closeProductDetail() { document.getElementById('product-detail-modal').classList.add('hidden'); },
       
+      openPartnerDetail(id) {
+          const p = state.partners.find(x => x.id === id);
+          if(!p) return;
+          document.getElementById('partner-detail-img').src = p.img || 'https://placehold.co/100x100?text=No+Image';
+          document.getElementById('partner-detail-title').textContent = p.name;
+          document.getElementById('partner-detail-desc').textContent = p.desc || "Tidak ada deskripsi mengenai partner ini.";
+          const btn = document.getElementById('partner-detail-btn');
+          if (p.link) {
+              btn.onclick = () => window.open(p.link, '_blank');
+              btn.classList.remove('hidden');
+          } else {
+              btn.classList.add('hidden');
+          }
+          document.getElementById('partner-detail-modal').classList.remove('hidden');
+      },
+      closePartnerDetail() { document.getElementById('partner-detail-modal').classList.add('hidden'); },
+
       copyReferral() {
           if(!state.customerData || !state.customerData.referralCode) return;
           navigator.clipboard.writeText(state.customerData.referralCode).then(() => ui.showToast("Kode Referral berhasil disalin!")).catch(() => {
@@ -1529,7 +1642,6 @@
           try {
               let referredByUid = null;
               if (refCodeInput) {
-                  // PERBAIKAN: Menggunakan getCol('profiles') secara dinamis
                   const profCol = getCol('profiles');
                   const profilesSnap = await getDocs(profCol);
                   let found = false;
@@ -1564,7 +1676,6 @@
           if(!e || !p) return ui.showToast("Isi Email dan password!", "error");
           ui.setBtnLoading('btn-do-login', true);
 
-          // Dummy Admin Check
           if (e.toLowerCase() === 'admin@toko.com' && p.trim() === 'admin2026') {
               try { 
                   state.isAdmin = true; state.customerData = null; state.user = {email: 'admin@toko.com', uid: 'admin-dummy'}; 
@@ -1578,7 +1689,6 @@
           }
           
           try { 
-              // PERBAIKAN: Menggunakan getCol('profiles') secara dinamis
               const profCol = getCol('profiles');
               const qSnap = await getDocs(profCol);
               let foundProf = null; let foundUid = null;
@@ -1608,7 +1718,6 @@
           state.customerData = null;
           state.isAdmin = false;
           
-          // PERBAIKAN: Memastikan perangkat mendapat sesi baru setelah logout agar uji coba banyak akun berjalan lancar
           try { 
               await signOut(auth); 
               await signInAnonymously(auth); 
@@ -1637,46 +1746,39 @@
       startAutoSlide() { clearInterval(state.slideInterval); if(state.sliderImages.length > 1) state.slideInterval = setInterval(() => this.nextSlide(), 4000); },
 
       renderCategoryPills() { 
-          const colors = [
-              'text-orange-500', 'text-red-500', 'text-blue-500',
-              'text-emerald-500', 'text-purple-500', 'text-pink-500',
-              'text-cyan-500', 'text-amber-500'
-          ];
-
-          const iconMap = {
-              'semua': 'fa-border-all',
-              'sayuran': 'fa-leaf',
-              'sembako': 'fa-basket-shopping',
-              'kue': 'fa-cake-candles',
-              'snack': 'fa-cookie-bite',
-              'minum': 'fa-glass-water',
-              'daging': 'fa-drumstick-bite',
-              'buah': 'fa-apple-whole',
-              'bumbu': 'fa-mortar-pestle'
+          // UBAH BAGIAN INI: Ganti link https://placehold.co/... dengan link URL gambar kategori Anda sendiri
+          const imageMap = {
+              'semua': 'https://lh3.googleusercontent.com/d/1pT30Dg7zh0Iv3n-x2XptQNklwyaTKbHP',
+              'sembako': 'https://lh3.googleusercontent.com/d/1HF-Y1XkKvefjpvIRZf3sZkgTGiVXYr30',
+              'sabun': 'https://lh3.googleusercontent.com/d/1-x9Sxn20HvD2btzpxQoaBRlCgRQKZnrT',
+              'snack': 'https://lh3.googleusercontent.com/d/165_5XlEz0gEw9rJybaXMSBmalHYbPrSw',
+              'jajanan pasar': 'https://lh3.googleusercontent.com/d/1jLMOLZnajerNq3zzYOuo24-Fji4JwR64',
+              'produk digital': 'https://lh3.googleusercontent.com/d/1phxutdf9ZcjQ-0_6mlPIl0GwwFSQM80b',
+              'buah': 'https://placehold.co/100x100/10b981/ffffff?text=Buah',
+              'bumbu': 'https://placehold.co/100x100/10b981/ffffff?text=Bumbu'
           };
 
           document.getElementById('category-container').innerHTML = state.categories.map((cat, index) => {
               const isSelected = state.selectedCategory === cat;
-              const iconColor = colors[index % colors.length];
               const lowerCat = cat.toLowerCase();
               
-              let iconClass = 'fa-tag'; 
-              for(let key in iconMap) { 
-                  if(lowerCat.includes(key)) { iconClass = iconMap[key]; break; } 
+              // Mencocokkan nama kategori dengan daftar gambar di imageMap
+              let imgSrc = 'https://placehold.co/100x100/10b981/ffffff?text=Lain'; // Gambar default jika tidak cocok
+              for(let key in imageMap) { 
+                  if(lowerCat.includes(key)) { imgSrc = imageMap[key]; break; } 
               }
-              if(lowerCat === 'semua') iconClass = 'fa-border-all';
+              if(lowerCat === 'semua') imgSrc = imageMap['semua'];
 
               const boxClass = isSelected 
-                  ? 'border-emerald-500 ring-2 ring-emerald-100 scale-105 shadow-md bg-white' 
+                  ? 'border-emerald-500 ring-2 ring-emerald-100 scale-105 shadow-md bg-emerald-50' 
                   : 'border-gray-100 hover:scale-105 hover:shadow-md shadow-[0_2px_8px_-4px_rgba(0,0,0,0.1)] bg-white';
               
               const textClass = isSelected ? 'text-emerald-700 font-bold' : 'text-gray-700 font-medium';
-              const finalIconColor = isSelected ? 'text-emerald-600' : iconColor;
 
               return `
               <div onclick="app.filterCategory('${cat}')" class="flex flex-col items-center cursor-pointer shrink-0 snap-center group transition-all duration-300 w-[72px] sm:w-[85px]">
-                  <div class="w-[46px] h-[46px] sm:w-[56px] sm:h-[56px] rounded-[1rem] sm:rounded-[1.2rem] border flex items-center justify-center text-xl sm:text-2xl transition-all duration-300 ${boxClass}">
-                      <i class="fa-solid ${iconClass} ${finalIconColor}"></i>
+                  <div class="w-[46px] h-[46px] sm:w-[56px] sm:h-[56px] rounded-[1rem] sm:rounded-[1.2rem] border flex items-center justify-center overflow-hidden transition-all duration-300 ${boxClass}">
+                      <img src="${imgSrc}" class="w-7 h-7 sm:w-9 sm:h-9 object-contain transition-transform duration-300 group-hover:scale-110" alt="${cat}">
                   </div>
                   <span class="mt-2.5 text-[9px] sm:text-[11px] leading-tight text-center w-full break-words line-clamp-2 px-0.5 transition-colors ${textClass}">${cat}</span>
               </div>
@@ -1832,6 +1934,25 @@
       collapseSection(sectionId) {
           state.expandedSections[sectionId] = false;
           this.renderHomeSections();
+      },
+
+      renderPartners() {
+          const container = document.getElementById('partner-grid');
+          const section = document.getElementById('public-partner-section');
+          
+          if (!state.partners || state.partners.length === 0) {
+              if (section) section.classList.add('hidden');
+              return;
+          }
+          if (section) section.classList.remove('hidden');
+
+          container.innerHTML = state.partners.map(p => `
+              <div onclick="app.openPartnerDetail('${p.id}')" class="cursor-pointer bg-white border border-gray-100 rounded-2xl p-4 flex flex-col items-center justify-center text-center hover:shadow-md transition-shadow group">
+                  <img src="${p.img || 'https://placehold.co/100x100?text=No+Image'}" class="w-16 h-16 sm:w-20 sm:h-20 object-contain mb-3 group-hover:scale-110 transition-transform duration-300">
+                  <h4 class="text-xs sm:text-sm font-bold text-gray-800 leading-tight">${p.name}</h4>
+                  ${p.desc ? `<p class="text-[9px] sm:text-[10px] text-gray-500 mt-1 line-clamp-2">${p.desc}</p>` : ''}
+              </div>
+          `).join('');
       },
 
       initScheduleDropdown() {
@@ -2261,7 +2382,19 @@
           } catch(e) { ui.showToast("Gagal memuat QRIS", "error"); }
       },
 
-      switchAdminTab(t) { ['orders','products','settings'].forEach(x => document.getElementById(`admin-tab-${x}`).classList.add('hidden')); document.getElementById(`admin-tab-${t}`).classList.remove('hidden'); ['orders','products','settings'].forEach(x => document.getElementById(`tab-${x}`).className = t===x?"px-3 py-2 text-white bg-gray-800 rounded-lg":"px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg"); },
+      switchAdminTab(t) { 
+          ['orders','products','partners','settings'].forEach(x => {
+              const el = document.getElementById(`admin-tab-${x}`);
+              if(el) el.classList.add('hidden');
+          });
+          const targetEl = document.getElementById(`admin-tab-${t}`);
+          if(targetEl) targetEl.classList.remove('hidden');
+          
+          ['orders','products','partners','settings'].forEach(x => {
+              const el = document.getElementById(`tab-${x}`);
+              if(el) el.className = t===x ? "px-3 py-2 text-white bg-gray-800 rounded-lg" : "px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg";
+          }); 
+      },
       
       async fetchAdminOrders() {
           ui.setBtnLoading('btn-refresh-orders', true);
@@ -2508,7 +2641,7 @@
               
               state.products = pData;
               this.renderAdminProducts();
-              this.filterCategory(state.selectedCategory); // Update katalog publik juga
+              this.filterCategory(state.selectedCategory); 
               
               ui.showToast("Data produk berhasil diperbarui!");
           } catch(e) {
@@ -2618,6 +2751,117 @@
 
       async toggleStatus(id, current) { try { await setDoc(getDocRef('products', id), { status: current==='Aktif'?'Arsip':'Aktif' }, {merge:true}); this.loadData(); } catch(e){} },
       deleteProduct(id) { ui.showConfirm("Hapus produk ini?", async () => { try { await deleteDoc(getDocRef('products', id)); ui.showToast("Dihapus."); this.loadData(); } catch(e){} }); },
+
+      async refreshAdminPartners() {
+          ui.setBtnLoading('btn-refresh-partners', true);
+          try {
+              const partColRef = getCol('partners');
+              const partSnap = await getDocs(partColRef);
+              let ptData = [];
+              partSnap.forEach(doc => ptData.push({ id: doc.id, ...doc.data() }));
+              ptData.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0));
+              
+              state.partners = ptData;
+              this.renderAdminPartners();
+              this.renderPartners();
+              
+              ui.showToast("Data partner berhasil diperbarui!");
+          } catch(e) {
+              console.error(e);
+              ui.showToast("Gagal memuat partner", "error");
+          } finally {
+              ui.setBtnLoading('btn-refresh-partners', false, '<i class="fa-solid fa-sync-alt mr-1"></i> Refresh');
+          }
+      },
+
+      renderAdminPartners() {
+          const list = document.getElementById('admin-partner-list');
+          if(!list) return;
+          if(!state.partners.length) { list.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-xs text-gray-500">Belum ada partner terdaftar.</td></tr>`; return; }
+
+          list.innerHTML = state.partners.map(p => `
+              <tr class="hover:bg-gray-50 border-b border-gray-50">
+                  <td class="px-6 py-4 align-top">
+                      <div class="flex items-start">
+                          <img class="h-12 w-12 rounded-lg border object-contain mr-3 bg-white" src="${p.img || 'https://placehold.co/100x100'}">
+                          <div>
+                              <div class="text-sm font-bold text-gray-800">${p.name}</div>
+                              <div class="text-[10px] text-gray-500 mt-1 line-clamp-2 max-w-xs">${p.desc || '-'}</div>
+                          </div>
+                      </div>
+                  </td>
+                  <td class="px-6 py-4 text-xs text-blue-500 align-top break-all max-w-[200px]"><a href="${p.link||'#'}" target="_blank">${p.link || '-'}</a></td>
+                  <td class="px-6 py-4 text-right whitespace-nowrap align-top">
+                      <button onclick="app.editPartner('${p.id}')" class="text-blue-500 hover:bg-blue-50 p-2 rounded-lg transition-colors mr-1"><i class="fa-solid fa-pen"></i></button>
+                      <button onclick="app.deletePartner('${p.id}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"><i class="fa-solid fa-trash"></i></button>
+                  </td>
+              </tr>
+          `).join('');
+      },
+
+      editPartner(id) {
+          const p = state.partners.find(x => x.id === id); if(!p) return; 
+          state.editingPartnerId = id;
+          document.getElementById('form-partner-title').textContent = "Edit Partner"; 
+          document.getElementById('btn-add-partner-text').textContent = "Simpan Perubahan"; 
+          document.getElementById('btn-cancel-edit-partner').classList.remove('hidden');
+          
+          document.getElementById('add-partner-name').value = p.name || ''; 
+          document.getElementById('add-partner-image').value = p.img || ''; 
+          document.getElementById('add-partner-link').value = p.link || ''; 
+          document.getElementById('add-partner-desc').value = p.desc || '';
+          
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+
+      cancelEditPartner() {
+          state.editingPartnerId = null; 
+          document.getElementById('form-partner-title').textContent = "Tambah Partner"; 
+          document.getElementById('btn-add-partner-text').textContent = "Simpan Partner"; 
+          document.getElementById('btn-cancel-edit-partner').classList.add('hidden'); 
+          ['add-partner-name','add-partner-image','add-partner-link','add-partner-desc'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+      },
+
+      async submitNewPartner() {
+          const n = document.getElementById('add-partner-name').value, 
+                i = document.getElementById('add-partner-image').value, 
+                l = document.getElementById('add-partner-link').value, 
+                d = document.getElementById('add-partner-desc').value;
+          
+          if(!n || !i) return ui.showToast("Nama dan Gambar/Logo Wajib diisi!", "error");
+          ui.setBtnLoading('btn-add-partner', true);
+          
+          try {
+              const payload = { name: n, img: i, link: l, desc: d, updatedAt: Date.now() };
+              
+              if (state.editingPartnerId) {
+                  await setDoc(getDocRef('partners', state.editingPartnerId), payload, {merge:true});
+              } else {
+                  payload.createdAt = Date.now();
+                  await setDoc(getDocRef('partners', "PTR-" + Date.now().toString().slice(-6)), payload);
+              }
+              
+              ui.showToast("Partner Berhasil Disimpan!");
+              this.cancelEditPartner();
+              this.refreshAdminPartners();
+          } catch(e) {
+              ui.showToast(`Gagal: ${e.message}`, "error");
+          } finally {
+              ui.setBtnLoading('btn-add-partner', false, state.editingPartnerId ? 'Simpan Perubahan' : 'Simpan Partner');
+          }
+      },
+
+      deletePartner(id) {
+          ui.showConfirm("Hapus partner ini?", async () => { 
+              try { 
+                  await deleteDoc(getDocRef('partners', id)); 
+                  ui.showToast("Partner dihapus."); 
+                  this.refreshAdminPartners(); 
+              } catch(e) {
+                  ui.showToast("Gagal menghapus", "error");
+              } 
+          });
+      },
 
       renderAdminSliders() { document.getElementById('admin-slider-list').innerHTML = state.sliderImages.length ? state.sliderImages.map((u, i) => `<div class="relative rounded-lg border overflow-hidden group aspect-w-3 aspect-h-1"><img src="${u}" class="object-cover w-full h-24"><button onclick="app.removeSliderImage(${i})" class="absolute top-1 right-1 bg-red-600 text-white w-6 h-6 rounded"><i class="fa-solid fa-times text-xs"></i></button></div>`).join('') : '<p class="text-xs text-gray-500">Belum ada slide.</p>'; },
       addSliderImage() { const v = document.getElementById('add-slider-url').value.trim(); if(v){ state.sliderImages.push(v); document.getElementById('add-slider-url').value=''; this.renderAdminSliders(); } },
